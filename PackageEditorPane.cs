@@ -1685,6 +1685,41 @@ namespace Microsoft.OpenXMLEditor
                 ErrorHandler.ThrowOnFailure(windowFrame.SetProperty((int)__VSFPROPID.VSFPROPID_ViewHelper, (IVsWindowFrameNotify3)windowFrameEventsHandler));
 
                 windowFrame.Show();
+
+                FormatDocument(windowFrame);
+            }
+        }
+
+        private static void FormatDocument(IVsWindowFrame windowFrame)
+        {
+            IVsTextView vsTextView = VsShellUtilities.GetTextView(windowFrame);
+
+            IOleCommandTarget commandTarget = (IOleCommandTarget)vsTextView;
+
+            Guid guid = typeof(VSConstants.VSStd2KCmdID).GUID;
+            OLECMD[] commandStatus = new OLECMD[]
+            {
+                new OLECMD() { cmdID = (uint)VSConstants.VSStd2KCmdID.FORMATDOCUMENT }
+            };
+
+            int hr = commandTarget.QueryStatus(
+                ref guid,
+                1,
+                commandStatus,
+                IntPtr.Zero);
+
+            Marshal.ThrowExceptionForHR(hr);
+
+            if (commandStatus[0].cmdf == (uint)(OLECMDF.OLECMDF_ENABLED | OLECMDF.OLECMDF_SUPPORTED))
+            {
+                hr = commandTarget.Exec(
+                ref guid,
+                (uint)VSConstants.VSStd2KCmdID.FORMATDOCUMENT,
+                0u,
+                IntPtr.Zero,
+                IntPtr.Zero);
+
+                Marshal.ThrowExceptionForHR(hr);
             }
         }
 

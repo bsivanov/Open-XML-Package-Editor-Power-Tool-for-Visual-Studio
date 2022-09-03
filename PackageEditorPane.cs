@@ -1968,6 +1968,7 @@ namespace Microsoft.OpenXMLEditor
 
         private void TreeView_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
             OpenTreeViewNode(e.Node, false);
         }
 

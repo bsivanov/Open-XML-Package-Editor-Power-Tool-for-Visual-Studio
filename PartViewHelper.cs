@@ -194,6 +194,8 @@ namespace Microsoft.OpenXMLEditor
 
         private void AdviseTextLinesEvents(bool subscribe)
         {
+            VisualStudio.Shell.ThreadHelper.ThrowIfNotOnUIThread();
+
             IConnectionPointContainer conPtCont;
             conPtCont = (IConnectionPointContainer)textLines;
             if (conPtCont != null)

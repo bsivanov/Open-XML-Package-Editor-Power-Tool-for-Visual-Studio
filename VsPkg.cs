@@ -26,6 +26,8 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio;
+using Task = System.Threading.Tasks.Task;
+using System.Threading;
 
 namespace Microsoft.OpenXMLEditor
 {
@@ -41,7 +43,7 @@ namespace Microsoft.OpenXMLEditor
     /// </summary>
     // This attribute tells the registration utility (regpkg.exe) that this class needs
     // to be registered as package.
-    [PackageRegistration(UseManagedResourcesOnly = true)]
+    [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     // A Visual Studio component can be registered under different regitry roots; for instance
     // when you debug your package you want to register it in the experimental hive. This
     // attribute specifies the registry root to use if no one is provided to regpkg.exe with
@@ -99,9 +101,8 @@ namespace Microsoft.OpenXMLEditor
 //TODO    [ProvideObject(typeof(PropertyPage))]
     [Guid(GuidList.guidOpenXMLEditorPkgString)]
     // [CLSCompliant(false)]
-    public sealed class OpenXMLEditor : Package, IVsInstalledProduct
+    public sealed class OpenXMLEditor : AsyncPackage, IVsInstalledProduct
     {
-
         private PackageEditorFactory editorFactory;
         private PartEditorFactory partEditorFactory;
 
@@ -127,10 +128,15 @@ namespace Microsoft.OpenXMLEditor
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initilaization code that rely on services provided by VisualStudio.
         /// </summary>
-        protected override void Initialize()
+        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             Debug.WriteLine (string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
-            base.Initialize();
+            await base.InitializeAsync(cancellationToken, progress);
+
+            // When initialized asynchronously, we *may* be on a background thread at this point.
+            // Do any initialization that requires the UI thread after switching to the UI thread.
+            // Otherwise, remove the switch to the UI thread if you don't need it.
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             //Create Editor Factory
             editorFactory = new PackageEditorFactory(this);
@@ -214,6 +220,8 @@ namespace Microsoft.OpenXMLEditor
         /// <returns>String loaded for the specified resource</returns>
         public string GetResourceString(string resourceName)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             IVsResourceManager resourceManager = (IVsResourceManager)GetService(typeof(SVsResourceManager));
             if (resourceManager == null)
             {

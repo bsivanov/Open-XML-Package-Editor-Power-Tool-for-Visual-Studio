@@ -120,6 +120,8 @@ namespace Microsoft.OpenXMLEditor
         {
             Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering {0} CreateEditorInstance()", this.ToString()));
 
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             // Initialize to null
             ppunkDocView = IntPtr.Zero;
             ppunkDocData = IntPtr.Zero;

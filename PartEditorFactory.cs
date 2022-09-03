@@ -113,6 +113,8 @@ namespace Microsoft.OpenXMLEditor
             out Guid pguidCmdUI,
             out int pgrfCDW)
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
             // Initialize to null
             ppunkDocView = IntPtr.Zero;
             ppunkDocData = IntPtr.Zero;

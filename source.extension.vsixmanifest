@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="ac41218c-c632-413c-b108-a9ecbbaabb90" Version="2.0.1" Language="en-US" Publisher="Borislav Ivanov"/>
+        <Identity Id="ac41218c-c632-413c-b108-a9ecbbaabb90" Version="2.1.0" Language="en-US" Publisher="Borislav Ivanov"/>
         <DisplayName>Open XML Package Editor for Modern Visual Studios</DisplayName>
         <Description xml:space="preserve">Parse and edit Open Packaging Conventions files, including Word, Excel, PowerPoint and Visio documents. Fork of the original Open XML Package Editor for Visual Studio extension by Microsoft.</Description>
         <License>eula.1033.txt</License>
@@ -10,10 +10,13 @@
         <Tags>OpenXML,Office Open XML, OOXML</Tags>
     </Metadata>
     <Installation InstalledByMsi="false">
-		<InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0, 17.0)" />
-		<InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
-			<ProductArchitecture>amd64</ProductArchitecture>
-		</InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0, 17.0)" />
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0, 18.0)">
+            <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)" >
+            <ProductArchitecture>arm64</ProductArchitecture>
+        </InstallationTarget>
     </Installation>
     <Dependencies>
     </Dependencies>

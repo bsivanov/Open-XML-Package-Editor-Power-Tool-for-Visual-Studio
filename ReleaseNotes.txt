@@ -1,4 +1,6 @@
-﻿v.2.0.1
+﻿v.2.1.0 Add support for Visual Studio 2022 (ARM64).
+
+v.2.0.1
 Fix `Show Properties` buttons throwing exception in Visual Studio 2022.
 
 v.2.0.0

@@ -26,6 +26,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Extensibility.UI;
 
 namespace Microsoft.OpenXMLEditor
 {
@@ -115,6 +116,7 @@ namespace Microsoft.OpenXMLEditor
         public OpenXMLEditor()
         {
             Debug.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering constructor for: {0}", this.ToString()));
+            Trace.WriteLine(ExtensibilityUIConstants.ExtensionIdResourceName);
         }
 
 

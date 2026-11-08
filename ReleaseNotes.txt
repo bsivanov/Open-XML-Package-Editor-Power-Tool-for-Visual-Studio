@@ -1,5 +1,5 @@
 ﻿v.2.0.2
-Fix Save/Save As writing unedited content in Visual Studio 2026. Add Visual Studio 2026 (18.x) installation target and save-path diagnostics (Activity Log).
+Fix Save/Save As writing unedited content in Visual Studio 2026. Fix the Track Changes margin staying yellow after save. Add Visual Studio 2026 (18.x) installation target and save-path diagnostics (Activity Log).
 
 v.2.0.1
 Fix `Show Properties` buttons throwing exception in Visual Studio 2022.

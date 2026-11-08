@@ -27,6 +27,9 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
+using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using System.IO;
@@ -1749,7 +1752,53 @@ namespace Microsoft.OpenXMLEditor
                         // and belongs to this editor instance
                         helper.FlushChanges();
                         if (fClearDirty)
+                        {
                             helper.IsModified = false;
+
+                            // The editor's Track Changes margin marks lines relative
+                            // to its save point, which only ITextDocument.Save()/
+                            // SaveAs() advance. These part buffers have no real file
+                            // of their own (their FilePath is a placeholder), so save
+                            // the buffer to a throwaway temp file to move the save
+                            // point and turn the changed-lines indicator green.
+                            // Never Save() to the real FilePath - that would write
+                            // raw XML over the .docx.
+                            try
+                            {
+                                IComponentModel componentModel = GetVsService(typeof(SComponentModel)) as IComponentModel;
+                                IVsEditorAdaptersFactoryService adapters =
+                                    componentModel == null ? null : componentModel.GetService<IVsEditorAdaptersFactoryService>();
+                                ITextDocument textDocument = null;
+                                if (adapters != null)
+                                {
+                                    ITextBuffer documentBuffer = adapters.GetDocumentBuffer(helper.TextLines);
+                                    if (documentBuffer != null)
+                                    {
+                                        documentBuffer.Properties.TryGetProperty(typeof(ITextDocument), out textDocument);
+                                    }
+                                }
+                                if (textDocument != null)
+                                {
+                                    string tempPath = Path.Combine(Path.GetTempPath(),
+                                        "OpenXMLEditor-" + ((uint)helper.PhysicalView.GetHashCode()).ToString("x") + ".txt");
+                                    if (string.Equals(textDocument.FilePath, tempPath, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        textDocument.Save();
+                                    }
+                                    else
+                                    {
+                                        textDocument.SaveAs(tempPath, true, textDocument.TextBuffer.ContentType);
+                                    }
+                                    ActivityLogger.Log(string.Format(
+                                        "FlushAllViews advanced save point for view='{0}'",
+                                        helper.PhysicalView));
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                ActivityLogger.Log("FlushAllViews save-point error: " + ex.Message);
+                            }
+                        }
                     }
                 }
             }

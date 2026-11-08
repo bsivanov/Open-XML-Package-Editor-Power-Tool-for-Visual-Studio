@@ -152,6 +152,14 @@ namespace Microsoft.OpenXMLEditor
 
         public PackageEditorPane Editor { get; }
 
+        /// <summary>
+        /// The text buffer hosting the part content.
+        /// </summary>
+        public IVsTextLines TextLines
+        {
+            get { return textLines; }
+        }
+
         #endregion Properties
 
         #region Methods

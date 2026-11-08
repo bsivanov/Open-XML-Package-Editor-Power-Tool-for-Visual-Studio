@@ -599,6 +599,7 @@ namespace Microsoft.OpenXMLEditor
         public int SetSite(Microsoft.VisualStudio.OLE.Interop.IServiceProvider psp)
         {
             vsServiceProvider = new ServiceProvider(psp);
+            ActivityLogger.Initialize(vsServiceProvider);
             return VSConstants.S_OK;
         }
 
@@ -790,6 +791,10 @@ namespace Microsoft.OpenXMLEditor
             // We don't want to be notify for this change of the file.
             AdviseFileChange(false);
 
+            ActivityLogger.Log(string.Format(
+                "IPersistFileFormat.Save pszFilename='{0}' remember={1} docPath='{2}'",
+                pszFilename, remember, docPkg.FilePath));
+
             // If file is null or same --> SAVE
             if (pszFilename == null || pszFilename == docPkg.FilePath)
             {
@@ -829,6 +834,12 @@ namespace Microsoft.OpenXMLEditor
             pbstrMkDocumentNew = null;
             pfSaveCanceled = 0;
             int hr = VSConstants.S_OK;
+
+            ActivityLogger.Log(string.Format(
+                "SaveDocData dwSave={0} path='{1}' isDirty={2}",
+                dwSave,
+                docPkg == null ? "(null)" : docPkg.FilePath,
+                docPkg == null ? -1 : (docPkg.IsDirty ? 1 : 0)));
 
             switch (dwSave)
             {

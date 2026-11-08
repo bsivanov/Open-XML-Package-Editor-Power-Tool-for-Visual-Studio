@@ -104,22 +104,120 @@ namespace Microsoft.OpenXMLEditor
 
         public bool SaveCopyAs(string path)
         {
+            string tempPath = null;
             try
             {
-                package.Flush();
-                memStream.Flush();
-                FileStream fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write);
-                fs.Seek(0, SeekOrigin.Begin);
-                fs.SetLength(0);
-                memStream.WriteTo(fs);
-                fs.Close();
+                ActivityLogger.Log(string.Format(
+                    "SaveCopyAs begin path='{0}' targetExisted={1}",
+                    path, File.Exists(path)));
+
+                // Serialize the document by copying all parts and relationships
+                // through the READ path into a brand-new package written to a
+                // temp file. Writing the live package's own stream relies on
+                // Package.Flush(), which under the Visual Studio 2026 packaging
+                // stack (System.IO.Packaging 11.0.0.0 from Common7\IDE\AppLocalWPF)
+                // serializes the ORIGINAL entry data (GitHub issue #10). Creating
+                // a new package uses a write path that works on every stack, and
+                // the live in-memory package is left untouched, so open part
+                // windows, the tree, and history stay valid.
+                tempPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                using (Package newPackage = Package.Open(tempPath, FileMode.Create))
+                {
+                    // Package-level relationships.
+                    foreach (PackageRelationship rel in package.GetRelationships())
+                    {
+                        newPackage.CreateRelationship(rel.TargetUri, rel.TargetMode, rel.RelationshipType, rel.Id);
+                    }
+
+                    // Parts, preserving content type and compression. The read
+                    // path reflects every edit made through DocumentPart.Text.
+                    // Relationship parts are NOT copied as parts: the packaging
+                    // regenerates them from the explicit CreateRelationship
+                    // calls below (copying them would double-register their
+                    // relationships and fail with ID conflicts).
+                    foreach (PackagePart part in package.GetParts())
+                    {
+                        if (part.ContentType.EndsWith("relationships+xml"))
+                        {
+                            continue;
+                        }
+                        PackagePart newPart = newPackage.CreatePart(part.Uri, part.ContentType, part.CompressionOption);
+                        using (Stream inStream = part.GetStream())
+                        using (Stream outStream = newPart.GetStream())
+                        {
+                            inStream.CopyTo(outStream);
+                        }
+                    }
+
+                    // Per-part relationships. Relationship parts cannot have
+                    // relationships of their own, so skip them.
+                    foreach (PackagePart part in package.GetParts())
+                    {
+                        if (part.ContentType.EndsWith("relationships+xml"))
+                        {
+                            continue;
+                        }
+                        PackagePart newPart = newPackage.GetPart(part.Uri);
+                        foreach (PackageRelationship rel in part.GetRelationships())
+                        {
+                            newPart.CreateRelationship(rel.TargetUri, rel.TargetMode, rel.RelationshipType, rel.Id);
+                        }
+                    }
+                }
+
+                ActivityLogger.Log(string.Format(
+                    "SaveCopyAs serialized tempLen={0}",
+                    new FileInfo(tempPath).Length));
+
+                // Swap the temp file into place, so a failed write never
+                // truncates the original file.
+                if (File.Exists(path))
+                {
+                    FileAttributes attributes = File.GetAttributes(path);
+                    File.SetAttributes(tempPath, attributes);
+                    File.Replace(tempPath, path, null);
+                }
+                else
+                {
+                    File.Move(tempPath, path);
+                }
+                tempPath = null;
+
+                ActivityLogger.Log(string.Format(
+                    "SaveCopyAs verify-after-write fileLen={0} fileHash={1}",
+                    new FileInfo(path).Length, HashHex(File.ReadAllBytes(path))));
+
                 dirty = false;
                 return true;
             }
             catch (Exception e)
             {
+                try
+                {
+                    if (tempPath != null && File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch
+                {
+                }
+
+                ActivityLogger.Log("SaveCopyAs ERROR: " + e.Message);
                 System.Windows.Forms.MessageBox.Show(e.Message);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Diagnostic: first 8 hex chars of the MD5 hash of a byte array.
+        /// Used only for save-path logging.
+        /// </summary>
+        private static string HashHex(byte[] bytes)
+        {
+            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
+            {
+                return BitConverter.ToString(md5.ComputeHash(bytes)).Replace("-", "").Substring(0, 8);
             }
         }
 
